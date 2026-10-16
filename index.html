@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KA Play — O Melhor do Streaming no Seu Android</title>
+    <meta name="description" content="Assista a filmes, séries e animes com a máxima qualidade, múltiplos servidores rápidos e visual cinematográfico. Baixe o APK oficial do KA Play!">
+    <link rel="icon" href="https://raw.githubusercontent.com/franciscoalro/kaplay/main/app/src/main/ic_launcher-playstore.png" type="image/png">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="KA Play — Streaming Premium Gratuito para Android">
+    <meta property="og:description" content="Mais de 12 servidores rápidos, reprodução em alta definição, catálogo atualizado e interface moderna.">
+    <meta property="og:type" content="website">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #E50914;
+            --primary-hover: #F40612;
+            --primary-glow: rgba(229, 9, 20, 0.4);
+            --bg-dark: #0A0A0C;
+            --bg-card: rgba(255, 255, 255, 0.04);
+            --bg-card-hover: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #FFFFFF;
+            --text-muted: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Ambient Glow Effect */
+        .ambient-glow {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100vw;
+            max-width: 1200px;
+            height: 500px;
+            background: radial-gradient(circle at 50% 10%, rgba(229, 9, 20, 0.25) 0%, rgba(10, 10, 12, 0) 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-badge {
+            background: linear-gradient(135deg, var(--primary), #FF416C);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 99px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        /* Hero Section */
+        .hero {
+            max-width: 900px;
+            margin: 60px auto 40px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .version-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(229, 9, 20, 0.12);
+            color: #FF4D4D;
+            border: 1px solid rgba(229, 9, 20, 0.3);
+            padding: 6px 16px;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .version-pill .dot {
+            width: 8px;
+            height: 8px;
+            background: #FF4D4D;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #FF4D4D;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.2rem);
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            background: linear-gradient(180deg, #FFFFFF 0%, #A1A1AA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 650px;
+            margin: 0 auto 36px;
+        }
+
+        /* Download Action */
+        .cta-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: linear-gradient(135deg, var(--primary), #FF2A36);
+            color: #FFFFFF;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 18px 42px;
+            border-radius: 14px;
+            text-decoration: none;
+            box-shadow: 0 10px 30px var(--primary-glow);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(229, 9, 20, 0.55);
+        }
+
+        .btn-download svg {
+            width: 26px;
+            height: 26px;
+            fill: currentColor;
+        }
+
+        .meta-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            color: #71717A;
+            font-size: 0.88rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Features Grid */
+        .features {
+            max-width: 1200px;
+            margin: 100px auto 40px;
+            padding: 0 20px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-header h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px 28px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .card-icon {
+            width: 52px;
+            height: 52px;
+            background: rgba(229, 9, 20, 0.1);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            color: #FF4D4D;
+        }
+
+        .card-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Server Highlights */
+        .servers-section {
+            max-width: 1200px;
+            margin: 80px auto;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .servers-badges {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .server-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .server-chip.active {
+            border-color: rgba(229, 9, 20, 0.4);
+            background: rgba(229, 9, 20, 0.08);
+            color: #FFF;
+        }
+
+        .server-chip .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10B981;
+        }
+
+        /* Footer */
+        footer {
+            max-width: 1200px;
+            margin: 80px auto 40px;
+            padding: 30px 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: #71717A;
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        footer a:hover {
+            color: #FFF;
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                margin-top: 40px;
+            }
+            .btn-download {
+                width: 100%;
+                max-width: 340px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+
+    <nav>
+        <a href="#" class="logo">
+            <span class="logo-badge">KA</span>
+            <span>KA Play</span>
+        </a>
+        <a href="https://github.com/franciscoalro/kaplay-releases/releases" class="nav-btn" target="_blank">Releases</a>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <div class="version-pill">
+                <span class="dot"></span>
+                Versão Oficial 4.10.71 Estável
+            </div>
+            <h1>O cinema na palma da sua mão.</h1>
+            <p>
+                Assista a lançamentos, filmes, séries completas e animes em alta definição com 12 servidores super rápidos, interface cinematográfica e suporte total a Smart TVs e TV Box.
+            </p>
+
+            <div class="cta-container">
+                <a href="https://github.com/franciscoalro/kaplay-releases/releases/download/v4.10.71/4.10.71.apk" class="btn-download" id="downloadBtn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 16L7 11L8.4 9.55L11 12.15V4H13V12.15L15.6 9.55L17 11L12 16ZM6 20C5.45 20 4.979 19.804 4.587 19.412C4.195 19.02 3.99933 18.5493 4 18V15H6V18H18V15H20V18C20 18.55 19.804 19.021 19.412 19.413C19.02 19.805 18.5493 20.0007 18 20H6Z"/>
+                    </svg>
+                    Baixar KA Play APK (Oficial)
+                </a>
+                <div class="meta-info">
+                    <div class="meta-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        100% Gratuito
+                    </div>
+                    <span>•</span>
+                    <div class="meta-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                        Android 7.0+
+                    </div>
+                    <span>•</span>
+                    <div class="meta-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Sem Vírus / Verificado
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="section-header">
+                <h2>Por que escolher o KA Play?</h2>
+                <p>Criado para oferecer a melhor e mais rápida experiência de entretenimento.</p>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16M4 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>
+                    </div>
+                    <h3>12 Servidores Integrados</h3>
+                    <p>Nunca mais fique sem assistir. Alterne instantaneamente entre servidores rápidos e estáveis com um único toque.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </div>
+                    <h3>Player Cinematográfico</h3>
+                    <p>Qualidade Full HD e 4K, controles por gestos intuitivos, histórico de onde você parou e suporte a legendas em português.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </div>
+                    <h3>Download para Assistir Offline</h3>
+                    <p>Baixe temporadas completas de séries ou seus filmes favoritos para curtir sem internet quando estiver viajando.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/></svg>
+                    </div>
+                    <h3>Transmissão para Smart TV</h3>
+                    <p>Compatível com Chromecast e TV Box. Projete a imagem na sua sala em 1 clique e aproveite com toda a família.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                    </div>
+                    <h3>Atualizações Automáticas</h3>
+                    <p>O aplicativo avisa e se atualiza sozinho sem precisar ir a sites externos, garantindo sempre novos recursos e estabilidade.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <h3>Organização e Favoritos</h3>
+                    <p>Crie sua lista de acompanhamento personalizada para saber exatamente quais episódios e lançamentos você já assistiu.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="servers-section">
+            <div class="section-header">
+                <h2>Servidores Ativos e Monitorados</h2>
+                <p>Nossa rede é constantemente monitorada para garantir conexão contínua e sem travamentos.</p>
+            </div>
+
+            <div class="servers-badges">
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 1 (CineVision)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 2 (PPCine)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 3 (RedeCanais)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 4 (SuperCine)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 5 (NetCine)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 6 (CineGato)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 7 (VeloPlayTV)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 8 (AnimeFire)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 9 (TopAnimes)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 10 (AnimesOrion)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 11 (Tomato)</div>
+                <div class="server-chip active"><span class="status-dot"></span> Servidor 12 (MegaFilmesHD)</div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 KA Play. Todos os direitos reservados. Distribuído de forma independente para entusiastas de streaming.</p>
+        <p style="margin-top: 10px;">
+            <a href="https://github.com/franciscoalro/kaplay-releases" target="_blank">Repositório de Lançamentos</a> • 
+            <a href="https://github.com/franciscoalro/kaplay-releases/releases/latest" target="_blank">Última Versão</a>
+        </p>
+    </footer>
+</body>
+</html>
