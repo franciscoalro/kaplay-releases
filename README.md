@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/franciscoalro/kaplay/main/app/src/main/ic_launcher-playstore.png" width="120" alt="KA Play Logo">
   <h1>🎬 KA Play</h1>
   <p><b>O melhor aplicativo de streaming gratuito para Android com 12 servidores integrados.</b></p>
   
