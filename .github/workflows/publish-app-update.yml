@@ -1,0 +1,63 @@
+name: Publish tested KA Play update
+
+on:
+  push:
+    branches: ['app-update-*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-app-update-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify tested APK and publication metadata
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, pathlib, re
+          metadata = json.loads(pathlib.Path('update.json').read_text())
+          publication = json.loads(pathlib.Path('publication.json').read_text())
+          asset = pathlib.Path(publication['asset'])
+          assert asset.parent == pathlib.Path('.') and asset.suffix == '.apk'
+          assert isinstance(metadata['versionCode'], int) and metadata['versionCode'] > 0
+          assert metadata['applicationId'].startswith('br.com.kaplay.app')
+          assert re.fullmatch(r'[A-Za-z0-9._-]+', publication['tag'])
+          assert hashlib.sha256(asset.read_bytes()).hexdigest() == metadata['sha256']
+          expected_url = 'https://github.com/franciscoalro/kaplay-releases/releases/download/' + publication['tag'] + '/' + asset.name
+          assert metadata['apkUrl'] == expected_url
+          pathlib.Path('release-tag.txt').write_text(publication['tag'])
+          pathlib.Path('release-title.txt').write_text(publication['title'])
+          pathlib.Path('release-asset.txt').write_text(asset.name)
+          pathlib.Path('release-prerelease.txt').write_text(str(publication['prerelease']).lower())
+          print('Verified APK SHA-256, application ID, version and download URL')
+          PY
+
+      - name: Publish APK and update manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="$(cat release-tag.txt)"
+          TITLE="$(cat release-title.txt)"
+          ASSET="$(cat release-asset.txt)"
+          PRERELEASE="$(cat release-prerelease.txt)"
+          FLAGS=()
+          if [ "$PRERELEASE" = 'true' ]; then
+            FLAGS+=(--prerelease --latest=false)
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ASSET" update.json --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file release-notes.md --prerelease="$PRERELEASE" --latest="$([ "$PRERELEASE" = 'true' ] && echo false || echo true)"
+          else
+            gh release create "$TAG" "$ASSET" update.json --target "$GITHUB_SHA" --title "$TITLE" --notes-file release-notes.md "${FLAGS[@]}"
+          fi
