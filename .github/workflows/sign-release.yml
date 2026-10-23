@@ -21,6 +21,11 @@ on:
         required: false
         type: string
         default: ''
+      source_apk_name:
+        description: 'Exact APK filename in source release (e.g. 4.10.140-PRE.apk). If empty, uses version_name.apk'
+        required: false
+        type: string
+        default: ''
       is_stable:
         description: 'Mark as stable release'
         required: false
