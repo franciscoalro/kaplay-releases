@@ -1,0 +1,13 @@
+# Sync Configuration
+# Leave versions empty to sync all, or specify versions to sync
+
+versions:
+  - v4.10.140
+  - v4.10.140-PRE
+  - v4.10.139-PRE
+  - v4.10.136-PRE
+  # - v4.10.137-PRE
+  # Add more versions as needed
+
+# Or use exclude patterns (uncomment):
+# exclude: "^v4\\.10\\.(130|131|132)$"

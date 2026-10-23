@@ -1,0 +1,204 @@
+name: Sync from Official Repository
+
+on:
+  schedule:
+    # Run daily at 8 AM UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      force_sync:
+        description: 'Force sync all configured versions'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  KEYSTORE: keystore.keystore
+  KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+  KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+  KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+  SOURCE_REPO: ${{ vars.SOURCE_REPO || 'franciscoalro/kaplay-releases' }}
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.parse.outputs.versions }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read sync config
+        id: config
+        run: |
+          if [ -f .github/sync-config.yml ]; then
+            echo "versions=$(cat .github/sync-config.yml | grep -E '^\s+-\s+v' | sed 's/.*-\s*//')" >> $GITHUB_OUTPUT
+          else
+            echo "versions=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get latest available versions from source
+        id: latest
+        run: |
+          echo "Fetching available versions from $SOURCE_REPO..."
+          VERSIONS=$(curl -sL "https://api.github.com/repos/$SOURCE_REPO/releases" | \
+            python3 -c "
+import sys, json
+releases = json.load(sys.stdin)
+versions = [r['tag_name'] for r in releases[:20] if not r['draft']]
+for v in versions:
+    print(v)
+")
+          echo "available=$VERSIONS" >> $GITHUB_OUTPUT
+
+      - name: Parse versions to sync
+        id: parse
+        run: |
+          CONFIG_VERSIONS="${{ steps.config.outputs.versions }}"
+          AVAILABLE="${{ steps.latest.outputs.available }}"
+          
+          # If no config or force_sync, use latest 5
+          if [ -z "$CONFIG_VERSIONS" ] || [ "${{ inputs.force_sync }}" == "true" ]; then
+            echo "versions=$(echo "$AVAILABLE" | head -5)" >> $GITHUB_OUTPUT
+          else
+            echo "versions=$CONFIG_VERSIONS" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Display versions to sync
+        run: |
+          echo "Versions to check/sync:"
+          echo "${{ steps.parse.outputs.versions }}"
+
+  sync-versions:
+    needs: check-updates
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ${{ fromJson(needs.check-updates.outputs.versions) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Create keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.keystore
+
+      - name: Check if version already exists
+        id: check
+        run: |
+          TAG="${{ matrix.version }}"
+          if gh release view "$TAG" &>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Version $TAG already released, skipping"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip if exists
+        if: steps.check.outputs.exists == 'true'
+        run: |
+          echo "Skipping ${{ matrix.version }} - already exists"
+
+      - name: Download APK from source
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          curl -L -o unsigned.apk \
+            "https://github.com/$SOURCE_REPO/releases/download/${{ matrix.version }}/${{ matrix.version }}.apk"
+        env:
+          SOURCE_REPO: ${{ env.SOURCE_REPO }}
+
+      - name: Extract version info
+        if: steps.check.outputs.exists == 'false'
+        id: version-info
+        run: |
+          # Get version info from update.json in source
+          INFO=$(curl -sL \
+            "https://github.com/$SOURCE_REPO/releases/download/${{ matrix.version }}/update.json")
+          
+          VERSION_NAME=$(echo "$INFO" | python3 -c "import sys,json; print(json.load(sys.stdin).get('versionName', '${{ matrix.version }}'))")
+          VERSION_CODE=$(echo "$INFO" | python3 -c "import sys,json; print(json.load(sys.stdin).get('versionCode', '0'))")
+          
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+        env:
+          SOURCE_REPO: ${{ env.SOURCE_REPO }}
+
+      - name: Sign APK
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          echo "Signing ${{ matrix.version }} with official certificate..."
+          
+          $ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner sign \
+            --ks "$KEYSTORE" \
+            --ks-pass "pass:$KEYSTORE_PASSWORD" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --key-pass "pass:$KEY_PASSWORD" \
+            --out signed.apk \
+            unsigned.apk
+
+      - name: Calculate SHA256
+        if: steps.check.outputs.exists == 'false'
+        id: sha256
+        run: |
+          SHA=$(sha256sum signed.apk | cut -d' ' -f1)
+          echo "sha256=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Create update.json
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          REPO_URL="https://github.com/${{ github.repository }}/releases/download/${{ matrix.version }}"
+          
+          cat > update.json << EOF
+          {
+            "applicationId": "br.com.kaplay.app.prerelease",
+            "versionName": "${{ steps.version-info.outputs.version_name }}",
+            "versionCode": ${{ steps.version-info.outputs.version_code }},
+            "sha256": "${{ steps.sha256.outputs.sha256 }}",
+            "apkUrl": "$REPO_URL/${{ matrix.version }}.apk"
+          }
+          EOF
+
+      - name: Create Release
+        if: steps.check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.version }}
+          name: KA Play ${{ matrix.version }} (Synced)
+          body: |
+            Auto-synced from $SOURCE_REPO
+            
+            Re-signed with local certificate for custom distribution.
+            
+            ## Version Info
+            
+            | Field | Value |
+            |-------|-------|
+            | Version Name | `${{ steps.version-info.outputs.version_name }}` |
+            | Version Code | `${{ steps.version-info.outputs.version_code }}` |
+            | SHA256 | `${{ steps.sha256.outputs.sha256 }}` |
+            
+            ---
+            *Synced with GitHub Actions*
+          files: |
+            signed.apk=${{ matrix.version }}.apk
+            update.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          echo "✅ Synced ${{ matrix.version }}"
+          echo "   SHA256: ${{ steps.sha256.outputs.sha256 }}"
+          echo "   Release: https://github.com/${{ github.repository }}/releases/tag/${{ matrix.version }}"

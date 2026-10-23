@@ -1,0 +1,196 @@
+name: Sign & Release KA Play APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version name (e.g., 4.10.136-PRE)'
+        required: true
+        type: string
+      version_code:
+        description: 'Version code (integer, e.g., 29876710)'
+        required: true
+        type: string
+      source_repo:
+        description: 'Source repository (owner/repo) to download from (optional)'
+        required: false
+        type: string
+        default: ''
+      source_tag:
+        description: 'Source tag to download APK from (optional)'
+        required: false
+        type: string
+        default: ''
+      is_stable:
+        description: 'Mark as stable release (uses br.com.kaplay.app)'
+        required: false
+        type: boolean
+        default: false
+      notes:
+        description: 'Release notes'
+        required: false
+        type: string
+        default: 'Update via GitHub Actions'
+
+env:
+  KEYSTORE: keystore.keystore
+  KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+  KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+  KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+jobs:
+  sign-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Create keystore from secret
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.keystore
+
+      - name: Set APK name variable
+        id: apk-name
+        run: |
+          echo "name=${{ inputs.version_name }}.apk" >> $GITHUB_OUTPUT
+
+      - name: Download APK from source repository
+        if: inputs.source_repo != '' && inputs.source_tag != ''
+        run: |
+          curl -L -o unsigned.apk \
+            "https://github.com/${{ inputs.source_repo }}/releases/download/${{ inputs.source_tag }}/${{ inputs.version_name }}.apk"
+
+      - name: Use local unsigned APK
+        if: inputs.source_repo == ''
+        run: |
+          if [ -f "unsigned.apk" ]; then
+            echo "Using local unsigned.apk"
+          elif [ -f "app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
+            cp app/build/outputs/apk/release/app-release-unsigned.apk unsigned.apk
+          else
+            echo "ERROR: No APK found. Either provide source_repo/source_tag, or add unsigned.apk"
+            exit 1
+          fi
+
+      - name: Sign APK with official certificate
+        run: |
+          APK_TO_SIGN="unsigned.apk"
+          
+          echo "Signing with certificate: CN=KA Play, OU=Mobile, O=Francisco Alro"
+          echo "This ensures compatibility with existing installations."
+          
+          $ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner sign \
+            --ks "$KEYSTORE" \
+            --ks-pass "pass:$KEYSTORE_PASSWORD" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --key-pass "pass:$KEY_PASSWORD" \
+            --out signed.apk \
+            "$APK_TO_SIGN"
+
+      - name: Verify signature
+        run: |
+          echo "=== Signed APK Info ==="
+          $ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner verify -v signed.apk
+          
+          echo ""
+          echo "=== Certificate Info ==="
+          keytool -printcert -jarfile signed.apk | grep -E "Owner|SHA256"
+
+      - name: Calculate SHA256
+        id: sha256
+        run: |
+          SHA=$(sha256sum signed.apk | cut -d' ' -f1)
+          echo "sha256=$SHA" >> $GITHUB_OUTPUT
+          echo "SHA256: $SHA"
+
+      - name: Create update.json (prerelease channel)
+        run: |
+          REPO_URL="https://github.com/${{ github.repository }}/releases/download/${{ inputs.version_name }}"
+          APK_NAME="${{ steps.apk-name.outputs.name }}"
+          
+          cat > update.json << EOF
+          {
+            "applicationId": "br.com.kaplay.app.prerelease",
+            "versionName": "${{ inputs.version_name }}",
+            "versionCode": ${{ inputs.version_code }},
+            "sha256": "${{ steps.sha256.outputs.sha256 }}",
+            "apkUrl": "$REPO_URL/$APK_NAME"
+          }
+          EOF
+          
+          echo "update.json:"
+          cat update.json
+
+      - name: Create update_stable.json (stable channel)
+        if: inputs.is_stable == true
+        run: |
+          REPO_URL="https://github.com/${{ github.repository }}/releases/download/${{ inputs.version_name }}"
+          APK_NAME="${{ steps.apk-name.outputs.name }}"
+          
+          cat > update_stable.json << EOF
+          {
+            "applicationId": "br.com.kaplay.app",
+            "versionName": "${{ inputs.version_name }}",
+            "versionCode": ${{ inputs.version_code }},
+            "sha256": "${{ steps.sha256.outputs.sha256 }}",
+            "apkUrl": "$REPO_URL/$APK_NAME"
+          }
+          EOF
+          
+          echo "update_stable.json:"
+          cat update_stable.json
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version_name }}
+          name: KA Play ${{ inputs.version_name }}
+          body: |
+            ${{ inputs.notes }}
+            
+            ## Version Info
+            
+            | Field | Value |
+            |-------|-------|
+            | Version Name | `${{ inputs.version_name }}` |
+            | Version Code | `${{ inputs.version_code }}` |
+            | SHA256 | `${{ steps.sha256.outputs.sha256 }}` |
+            | Package | `br.com.kaplay.app.prerelease` |
+            | Certificate | CN=KA Play, OU=Mobile, O=Francisco Alro, L=Brasilia, ST=DF, C=BR |
+            
+            ---
+            *Built with GitHub Actions - Same signature for seamless updates*
+          files: |
+            signed.apk=${{ steps.apk-name.outputs.name }}
+            update.json
+            update_stable.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Display Results
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════════════════════"
+          echo "              ✅ RELEASE COMPLETE"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          echo "  Version: ${{ inputs.version_name }}"
+          echo "  Version Code: ${{ inputs.version_code }}"
+          echo "  SHA256: ${{ steps.sha256.outputs.sha256 }}"
+          echo ""
+          echo "  Release URL:"
+          echo "  https://github.com/${{ github.repository }}/releases/tag/${{ inputs.version_name }}"
+          echo ""
+          echo "═══════════════════════════════════════════════════════"
