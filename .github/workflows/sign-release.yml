@@ -168,7 +168,8 @@ jobs:
 
       - name: Create update.json
         run: |
-          REPO_URL="https://github.com/${{ github.repository }}/releases/download/${{ inputs.version_name }}"
+          RELEASE_TAG="v${{ inputs.version_name }}"
+          REPO_URL="https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}"
           FILENAME="${{ inputs.version_name }}.apk"
           
           cat > update.json << EOF
@@ -186,7 +187,8 @@ jobs:
       - name: Create update_stable.json
         if: inputs.is_stable
         run: |
-          REPO_URL="https://github.com/${{ github.repository }}/releases/download/${{ inputs.version_name }}"
+          RELEASE_TAG="v${{ inputs.version_name }}"
+          REPO_URL="https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}"
           FILENAME="${{ inputs.version_name }}.apk"
           
           cat > update_stable.json << EOF
@@ -200,10 +202,15 @@ jobs:
           EOF
           echo "update_stable.json created"
 
+      - name: Prepare APK filename
+        run: |
+          cp signed.apk "${{ inputs.version_name }}.apk"
+          ls -lh "${{ inputs.version_name }}.apk"
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.version_name }}
+          tag_name: v${{ inputs.version_name }}
           name: KA Play ${{ inputs.version_name }}
           body: |
             ${{ inputs.notes }}
@@ -221,7 +228,7 @@ jobs:
             ---
             *Built with GitHub Actions - Same signature for seamless updates*
           files: |
-            signed.apk=${{ inputs.version_name }}.apk
+            ${{ inputs.version_name }}.apk
             update.json
             update_stable.json
         env:
@@ -237,9 +244,9 @@ jobs:
           echo "  Version:     ${{ inputs.version_name }}"
           echo "  Version Code: ${{ inputs.version_code }}"
           echo "  SHA256:      ${{ steps.sha256.outputs.sha256 }}"
-          echo "  APK Size:    $(du -h signed.apk | cut -f1)"
+          echo "  APK Size:    $(du -h "${{ inputs.version_name }}.apk" | cut -f1)"
           echo ""
           echo "  Release:"
-          echo "  https://github.com/${{ github.repository }}/releases/tag/${{ inputs.version_name }}"
+          echo "  https://github.com/${{ github.repository }}/releases/tag/v${{ inputs.version_name }}"
           echo ""
           echo "═══════════════════════════════════════════════════════"
