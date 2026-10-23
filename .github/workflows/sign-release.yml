@@ -54,8 +54,34 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Find apksigner
+        id: find-apksigner
+        run: |
+          # GitHub runners já têm Android SDK pré-instalado
+          # Procura apksigner em possíveis localizações
+          for dir in "$ANDROID_SDK_ROOT" "$ANDROID_HOME" "$HOME/android-sdk" "/usr/local/lib/android/sdk"; do
+            if [ -d "$dir" ]; then
+              echo "Android SDK found at: $dir"
+              ls "$dir/build-tools/" 2>/dev/null | tail -3
+              # Usa a versão mais recente de build-tools disponível
+              APK_SIGNER=$(find "$dir/build-tools" -name apksigner -type f 2>/dev/null | head -1)
+              if [ -n "$APK_SIGNER" ]; then
+                APK_SIGNER_DIR=$(dirname "$APK_SIGNER")
+                echo "apksigner found: $APK_SIGNER_DIR"
+                echo "apksigner_dir=$APK_SIGNER_DIR" >> $GITHUB_OUTPUT
+                break
+              fi
+            fi
+          done
+          
+          if [ -z "${{ steps.find-apksigner.outputs.apksigner_dir }}" ]; then
+            echo "Installing build-tools..."
+            mkdir -p /tmp/android-sdk
+            export ANDROID_SDK_ROOT=/tmp/android-sdk
+            export ANDROID_HOME=/tmp/android-sdk
+            yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "build-tools;34.0.0" 2>/dev/null || true
+            echo "apksigner_dir=$ANDROID_SDK_ROOT/build-tools/34.0.0" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create keystore from secret
         run: |
@@ -91,7 +117,7 @@ jobs:
           echo "Signing with certificate: CN=KA Play, OU=Mobile, O=Francisco Alro"
           echo "This ensures compatibility with existing installations."
           
-          $ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner sign \
+          ${{ steps.find-apksigner.outputs.apksigner_dir }}/apksigner sign \
             --ks "$KEYSTORE" \
             --ks-pass "pass:$KEYSTORE_PASSWORD" \
             --ks-key-alias "$KEY_ALIAS" \
