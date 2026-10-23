@@ -227,6 +227,10 @@ jobs:
             
             ---
             *Built with GitHub Actions - Same signature for seamless updates*
+            
+            ```kaplay-update
+            {"applicationId":"br.com.kaplay.app.prerelease","versionName":"${{ inputs.version_name }}","versionCode":${{ inputs.version_code }},"sha256":"${{ steps.sha256.outputs.sha256 }}","apkUrl":"https://github.com/${{ github.repository }}/releases/download/v${{ inputs.version_name }}/${{ inputs.version_name }}.apk"}
+            ```
           files: |
             ${{ inputs.version_name }}.apk
             update.json
