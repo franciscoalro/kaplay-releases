@@ -99,10 +99,24 @@ jobs:
       - name: Download APK
         if: inputs.source_repo != '' && inputs.source_tag != ''
         run: |
-          FILENAME="${{ inputs.version_name }}.apk"
-          curl -sL -o unsigned.apk \
-            "https://github.com/${{ inputs.source_repo }}/releases/download/${{ inputs.source_tag }}/${FILENAME}"
-          echo "Downloaded: $(du -h unsigned.apk)"
+          # Prefer explicit source_apk_name; fall back to version_name
+          if [ -n "${{ inputs.source_apk_name }}" ]; then
+            APK_NAME="${{ inputs.source_apk_name }}"
+          else
+            APK_NAME="${{ inputs.version_name }}.apk"
+          fi
+          echo "Downloading: $APK_NAME from tag ${{ inputs.source_tag }}"
+          gh release download "${{ inputs.source_tag }}" \
+            --repo "${{ inputs.source_repo }}" \
+            --pattern "${APK_NAME}" \
+            --output unsigned.apk --force --clobber || {
+            echo "gh release download falhou, tentando curl direto..."
+            curl -L --fail --silent --show-error -o unsigned.apk \
+              "https://github.com/${{ inputs.source_repo }}/releases/download/${{ inputs.source_tag }}/${APK_NAME}"
+          }
+          echo "Downloaded:"
+          du -h unsigned.apk
+          file unsigned.apk
 
       - name: Use local APK
         if: inputs.source_repo == ''
