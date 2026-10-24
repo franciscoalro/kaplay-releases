@@ -29,7 +29,7 @@ O **KA Play** é um aplicativo de streaming moderno desenvolvido para Android, o
 ## 📥 Como Instalar
 
 1. Acesse a [última release oficial](https://github.com/franciscoalro/kaplay-releases/releases/latest).
-2. Baixe o arquivo `.apk` (`4.10.71.apk`).
+2. Baixe o APK da versão estável ou da prévia desejada nos arquivos da release.
 3. Permita a instalação de fontes desconhecidas no seu Android, caso solicitado.
 4. Instale e aproveite todo o catálogo!
 
@@ -37,3 +37,7 @@ O **KA Play** é um aplicativo de streaming moderno desenvolvido para Android, o
 <div align="center">
   <p>Desenvolvido para entusiastas de cinema e séries.</p>
 </div>
+
+## Publicação
+
+Este repositório público hospeda o site e os APKs publicados. A compilação, a assinatura e a validação de atualização ocorrem no repositório privado do aplicativo. O GitHub Actions deste repositório está desativado e nenhuma chave de assinatura é armazenada aqui.
