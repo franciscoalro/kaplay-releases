@@ -17,7 +17,7 @@ O **KA Play** é um aplicativo de streaming moderno desenvolvido para Android, o
 
 ## ✨ Principais Recursos
 
-- 🚀 **12 Servidores Integrados:** Alterne instantaneamente entre servidores rápidos e estáveis (*CineVision, PPCine, RedeCanais, SuperCine, NetCine, CineGato, VeloPlayTV, AnimeFire, TopAnimes, AnimesOrion, Tomato, MegaFilmesHD*).
+- 🚀 **Fontes de reprodução:** Escolha a fonte disponível diretamente no aplicativo.
 - 🎨 **Redesign Cinematográfico:** Tela de detalhes imersiva com topo transparente, banner de alta resolução (280dp com degradê suave) e botões de ação rápidos.
 - ⬇️ **Downloads Offline:** Baixe filmes e séries inteiras para assistir quando estiver sem internet.
 - 📺 **Transmissão para Smart TV:** Suporte nativo a Chromecast e TV Box.
