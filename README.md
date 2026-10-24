@@ -33,6 +33,8 @@ O **KA Play** é um aplicativo de streaming moderno desenvolvido para Android, o
 3. Permita a instalação de fontes desconhecidas no seu Android, caso solicitado.
 4. Instale e aproveite todo o catálogo!
 
+A versão estável e a [prévia](https://github.com/franciscoalro/kaplay-releases/releases) são canais separados e usam pacotes Android diferentes. A página de downloads mostra ambos os canais.
+
 ---
 <div align="center">
   <p>Desenvolvido para entusiastas de cinema e séries.</p>
