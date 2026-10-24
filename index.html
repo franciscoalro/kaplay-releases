@@ -189,6 +189,12 @@
             fill: currentColor;
         }
 
+        .preview-download {
+            color: #ddd6fe;
+            font-weight: 600;
+            text-underline-offset: 4px;
+        }
+
         .meta-info {
             display: flex;
             align-items: center;
@@ -368,7 +374,7 @@
         <section class="hero">
             <div class="version-pill">
                 <span class="dot"></span>
-                Versão Oficial 4.10.71 Estável
+                <span id="stableVersion">Versão oficial 4.10.142 estável</span>
             </div>
             <h1>O cinema na palma da sua mão.</h1>
             <p>
@@ -376,12 +382,13 @@
             </p>
 
             <div class="cta-container">
-                <a href="https://github.com/franciscoalro/kaplay-releases/releases/download/v4.10.71/4.10.71.apk" class="btn-download" id="downloadBtn">
+                <a href="https://github.com/franciscoalro/kaplay-releases/releases/download/v4.10.142/4.10.142.apk" class="btn-download" id="downloadBtn">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 16L7 11L8.4 9.55L11 12.15V4H13V12.15L15.6 9.55L17 11L12 16ZM6 20C5.45 20 4.979 19.804 4.587 19.412C4.195 19.02 3.99933 18.5493 4 18V15H6V18H18V15H20V18C20 18.55 19.804 19.021 19.412 19.413C19.02 19.805 18.5493 20.0007 18 20H6Z"/>
                     </svg>
                     Baixar KA Play APK (Oficial)
                 </a>
+                <a href="https://github.com/franciscoalro/kaplay-releases/releases/download/v4.10.142-PRE/4.10.142-PRE.apk" class="preview-download" id="previewDownload">Baixar prévia 4.10.142-PRE</a>
                 <div class="meta-info">
                     <div class="meta-item">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -488,5 +495,37 @@
             <a href="https://github.com/franciscoalro/kaplay-releases/releases/latest" target="_blank">Última Versão</a>
         </p>
     </footer>
+    <script>
+        async function refreshDownloads() {
+            try {
+                const response = await fetch('https://api.github.com/repos/franciscoalro/kaplay-releases/releases?per_page=30');
+                if (!response.ok) return;
+                const releases = await response.json();
+                for (const channel of ['stable', 'preview']) {
+                    const prerelease = channel === 'preview';
+                    const release = releases.find(item =>
+                        !item.draft && item.prerelease === prerelease &&
+                        /^v\d+\.\d+\.\d+(-PRE)?$/.test(item.tag_name) &&
+                        item.tag_name.endsWith('-PRE') === prerelease &&
+                        item.assets.some(asset => asset.name === item.tag_name.slice(1) + '.apk')
+                    );
+                    if (!release) continue;
+                    const version = release.tag_name.slice(1);
+                    const asset = release.assets.find(item => item.name === version + '.apk');
+                    if (channel === 'stable') {
+                        document.getElementById('stableVersion').textContent = `Versão oficial ${version} estável`;
+                        document.getElementById('downloadBtn').href = asset.browser_download_url;
+                    } else {
+                        const link = document.getElementById('previewDownload');
+                        link.textContent = `Baixar prévia ${version}`;
+                        link.href = asset.browser_download_url;
+                    }
+                }
+            } catch (_) {
+                // Keep the verified release links embedded above when GitHub is unavailable.
+            }
+        }
+        refreshDownloads();
+    </script>
 </body>
 </html>
