@@ -1,0 +1,22 @@
+version: 2.1
+
+jobs:
+  static-site-placeholder:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: Validate static site entrypoint
+          command: test -s index.html
+      - run:
+          name: No project build, test, or lint commands
+          command: |
+            echo "Static HTML repository detected."
+            echo "No package manager, lockfile, build script, test suite, or lint command was found."
+            echo "No dependency cache is configured because the repository has no lockfile."
+
+workflows:
+  circleci-project-setup:
+    jobs:
+      - static-site-placeholder
